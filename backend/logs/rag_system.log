@@ -1,0 +1,80 @@
+2025-04-25 18:03:28,473 - rag_system - INFO - Logging initialized at INFO level
+2025-04-25 18:03:28,474 - vector_store - INFO - Using device: mps
+2025-04-25 18:03:28,474 - vector_store - INFO - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2025-04-25 18:03:28,474 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2025-04-25 18:03:34,201 - vector_store - INFO - Embedding model loaded successfully
+2025-04-25 18:03:34,202 - vector_store - INFO - Will reduce embeddings to 384 dimensions
+2025-04-25 18:03:34,202 - vector_store - INFO - No existing collections found
+2025-04-25 18:03:34,203 - llm_manager - INFO - Initializing llama.cpp model from ./models/Meta-Llama-3-8B-Instruct.Q4_K_M.gguf
+2025-04-25 18:03:34,997 - llm_manager - INFO - Loaded llama.cpp model with context size 4096
+2025-04-25 18:03:34,997 - llm_manager - INFO - Model initialized successfully
+2025-04-25 18:03:35,001 - rag_system - INFO - Starting server with model: Meta-Llama-3-8B-Instruct.Q4_K_M.gguf
+2025-04-25 18:03:35,001 - rag_system - INFO - Using device: mps
+2025-04-25 18:03:35,001 - rag_system - INFO - Embeddings model: sentence-transformers/all-MiniLM-L6-v2
+2025-04-25 18:03:35,019 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8001
+ * Running on http://172.20.10.2:8001
+2025-04-25 18:03:35,019 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-04-25 18:03:57,813 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:03:57] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:03:57,819 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:03:57] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:03:57,826 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:03:57] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:03:57,829 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:03:57] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:04:12,295 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:04:12] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:04:12,301 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:04:12] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:04:12,307 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:04:12] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:04:12,311 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:04:12] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:04:13,329 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:04:13] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:04:13,334 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:04:13] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:04:13,345 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:04:13] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:04:13,350 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:04:13] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:04:13,364 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:04:13] "POST /api/upload HTTP/1.1" 200 -
+2025-04-25 18:04:13,365 - document_processor - INFO - Split text into 1 chunks in 0.00s
+2025-04-25 18:04:13,369 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:04:13] "GET /api/documents HTTP/1.1" 200 -
+2025-04-25 18:04:13,422 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:04:13] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:04:13,427 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:04:13] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:04:13,433 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:04:13] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:04:13,436 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:04:13] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:04:13,443 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:04:13] "[31m[1mGET /api/document/doc_1745568253_b6ygxs/download HTTP/1.1[0m" 409 -
+2025-04-25 18:04:17,534 - vector_store - INFO - Generated 1 embeddings in 4.17s
+2025-04-25 18:04:17,540 - vector_store - INFO - Created new collection: doc_1745568253_b6ygxs
+2025-04-25 18:06:12,132 - rag_system - INFO - Logging initialized at INFO level
+2025-04-25 18:06:12,133 - vector_store - INFO - Using device: mps
+2025-04-25 18:06:12,133 - vector_store - INFO - Loading embedding model: sentence-transformers/all-MiniLM-L6-v2
+2025-04-25 18:06:12,133 - sentence_transformers.SentenceTransformer - INFO - Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+2025-04-25 18:06:16,313 - vector_store - INFO - Embedding model loaded successfully
+2025-04-25 18:06:16,314 - vector_store - INFO - Will reduce embeddings to 384 dimensions
+2025-04-25 18:06:16,318 - vector_store - INFO - Loaded 1 collections
+2025-04-25 18:06:16,318 - llm_manager - INFO - Initializing llama.cpp model from ./models/Meta-Llama-3-8B-Instruct.Q4_K_M.gguf
+2025-04-25 18:06:16,982 - llm_manager - INFO - Loaded llama.cpp model with context size 4096
+2025-04-25 18:06:16,982 - llm_manager - INFO - Model initialized successfully
+2025-04-25 18:06:16,986 - rag_system - INFO - Starting server with model: Meta-Llama-3-8B-Instruct.Q4_K_M.gguf
+2025-04-25 18:06:16,986 - rag_system - INFO - Using device: mps
+2025-04-25 18:06:16,986 - rag_system - INFO - Embeddings model: sentence-transformers/all-MiniLM-L6-v2
+2025-04-25 18:06:17,006 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8001
+ * Running on http://172.20.10.2:8001
+2025-04-25 18:06:17,006 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-04-25 18:06:23,845 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:06:23] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:06:23,850 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:06:23] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:06:23,860 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:06:23] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:06:23,863 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:06:23] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:06:28,798 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:06:28] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:06:28,803 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:06:28] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:06:28,810 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:06:28] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:06:28,813 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:06:28] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:06:29,943 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:06:29] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:06:29,951 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:06:29] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:06:29,961 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:06:29] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:06:29,964 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:06:29] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:06:29,975 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:06:29] "POST /api/upload HTTP/1.1" 200 -
+2025-04-25 18:06:29,976 - document_processor - INFO - Split text into 1 chunks in 0.00s
+2025-04-25 18:06:29,979 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:06:29] "GET /api/documents HTTP/1.1" 200 -
+2025-04-25 18:06:30,022 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:06:30] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:06:30,026 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:06:30] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:06:30,031 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:06:30] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:06:30,034 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:06:30] "GET /api/health HTTP/1.1" 200 -
+2025-04-25 18:06:30,039 - werkzeug - INFO - 127.0.0.1 - - [25/Apr/2025 18:06:30] "[31m[1mGET /api/document/doc_1745568389_rgs3fv/download HTTP/1.1[0m" 409 -
+2025-04-25 18:06:30,550 - vector_store - INFO - Generated 1 embeddings in 0.57s
+2025-04-25 18:06:30,556 - vector_store - INFO - Created new collection: doc_1745568389_rgs3fv

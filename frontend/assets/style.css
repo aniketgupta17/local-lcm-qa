@@ -1,0 +1,266 @@
+/* assets/style.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* Base theme variables are set dynamically in the app.py root element */
+
+/* Base styles */
+html, body, [class*="css"] {
+    font-family: 'Inter', sans-serif;
+    color: var(--text-color);
+}
+
+.stApp {
+    background-color: var(--background-color);
+}
+
+/* Sidebar styling */
+[data-testid="stSidebar"] {
+    background-color: var(--card-bg-color);
+    border-right: 1px solid var(--card-border-color);
+}
+
+/* Headers */
+h1, h2, h3, h4 {
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+h1 {
+    font-size: 2em;
+    margin-bottom: 0.3em;
+}
+
+/* Card styling */
+.card {
+    background-color: var(--card-bg-color);
+    border: 1px solid var(--card-border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+/* Chat interface styling */
+.chat-message {
+    display: flex;
+    margin: 1rem 0;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+}
+
+.chat-message .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    flex-shrink: 0;
+    font-size: 1.2rem;
+}
+
+.chat-message .message {
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    flex-grow: 1;
+}
+
+.user-message {
+    background-color: rgba(120, 120, 120, 0.1);
+}
+
+.user-message .message {
+    background-color: var(--accent-color);
+    color: #FFFFFF;
+    border-radius: 0.5rem 0.5rem 0.5rem 0;
+}
+
+.assistant-message {
+    background-color: rgba(150, 150, 150, 0.05);
+}
+
+.assistant-message .message {
+    background-color: var(--card-bg-color);
+    border: 1px solid var(--card-border-color);
+    border-radius: 0.5rem 0.5rem 0 0.5rem;
+}
+
+/* Answer box styling */
+.answer-box {
+    background-color: var(--card-bg-color);
+    padding: 1em;
+    border-radius: 8px;
+    border: 1px solid var(--card-border-color);
+    margin-bottom: 1em;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Customize expander */
+.streamlit-expanderHeader {
+    font-weight: 600;
+    color: var(--accent-color);
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.3s ease;
+}
+
+.streamlit-expanderHeader:hover {
+    color: var(--hover-color);
+}
+
+/* Button styling */
+.stButton button {
+    border-radius: 6px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.stButton button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Status indicator */
+.status-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+.status-online {
+    background-color: #2ECC71;
+}
+
+.status-offline {
+    background-color: #E74C3C;
+}
+
+/* File upload area styling */
+[data-testid="stFileUploader"] {
+    border: 2px dashed var(--card-border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+[data-testid="stFileUploader"]:hover {
+    border-color: var(--accent-color);
+}
+
+/* Progress bar styling */
+.stProgress > div > div {
+    background-color: var(--accent-color);
+}
+
+/* Code block styling */
+code {
+    border-radius: 4px;
+    padding: 2px 5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85em;
+    background-color: rgba(0, 0, 0, 0.15);
+}
+
+/* Table styling */
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+thead tr {
+    border-bottom: 2px solid var(--card-border-color);
+}
+
+tr {
+    border-bottom: 1px solid var(--card-border-color);
+}
+
+th, td {
+    padding: 0.5rem;
+    text-align: left;
+}
+
+/* Tabs styling */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 2px;
+}
+
+.stTabs [data-baseweb="tab"] {
+    height: 45px;
+    white-space: pre-wrap;
+    background-color: transparent;
+    border-radius: 4px 4px 0 0;
+    gap: 1px;
+    padding: 10px 16px;
+    font-weight: 500;
+}
+
+.stTabs [aria-selected="true"] {
+    background-color: var(--card-bg-color);
+    border-bottom: 2px solid var(--accent-color);
+}
+
+/* Plot container styling */
+[data-testid="stPlotlyChart"] > div {
+    border-radius: 8px;
+    border: 1px solid var(--card-border-color);
+    overflow: hidden;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+    .chat-message {
+        flex-direction: column;
+    }
+    
+    .chat-message .avatar {
+        margin-right: 0;
+        margin-bottom: 0.5rem;
+    }
+    
+    .user-message .message,
+    .assistant-message .message {
+        border-radius: 0.5rem;
+    }
+    
+    /* Adjust column layouts */
+    .row-widget.stHorizontal {
+        flex-direction: column;
+    }
+    
+    .row-widget.stHorizontal > div {
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+}
+
+/* Animation effects */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+/* Dark mode specific adjustments */
+.dark-mode .stButton button {
+    background-color: #394a6a;
+    color: white;
+}
+
+/* Light mode specific adjustments */
+.light-theme .stButton button {
+    background-color: #f0f2f6;
+    color: #394a6a;
+}
