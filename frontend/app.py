@@ -24,8 +24,8 @@ DEFAULT_AVATAR = "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"
 # Initialize session state variables
 if "active_document" not in st.session_state:
     st.session_state.active_document = None
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
+if "chat_histories" not in st.session_state:
+    st.session_state.chat_histories = {}
 if "documents" not in st.session_state:
     st.session_state.documents = []
 if "dark_mode" not in st.session_state:
@@ -163,6 +163,13 @@ def get_document_summary(doc_id):
         st.error(f"Failed to get summary: {e}")
         return None
 
+# Helper to get/set chat history for current document
+def get_chat_history(doc_id):
+    return st.session_state.chat_histories.get(doc_id, [])
+
+def set_chat_history(doc_id, history):
+    st.session_state.chat_histories[doc_id] = history
+
 # UI Components
 def render_header():
     """Render the application header"""
@@ -214,6 +221,8 @@ def render_sidebar():
                     doc_details = get_document_details(doc['id'])
                     if doc_details:
                         st.session_state.active_document_details = doc_details
+                    # Load chat history for this document
+                    st.session_state.chat_history = get_chat_history(doc['id'])
                     st.rerun()
         
         # Divider
@@ -306,17 +315,20 @@ def render_document_input():
             st.session_state.clear()
             st.rerun()
     
-    # Process the document when button is clicked
+    # Real-time processing indicator
     if process_btn:
         if uploaded_file or pasted_text:
-           result = process_document(uploaded_file, pasted_text)
-           if result:
-            st.session_state.active_document = result.get("document_id")
-            st.session_state.active_document_details = result
-            st.session_state.documents = get_document_list()
-            # CHANGED success message:
-            st.success(f"Document processing started with ID: {result.get('document_id')}. Check the 'Your Documents' list or refresh to see status updates.")
-            st.rerun()
+            with st.spinner("Processing document... (This may take a while)"):
+                result = process_document(uploaded_file, pasted_text)
+            if result:
+                st.session_state.active_document = result.get("document_id")
+                st.session_state.active_document_details = result
+                st.session_state.documents = get_document_list()
+                # Initialize chat history for this document
+                set_chat_history(st.session_state.active_document, [])
+                st.session_state.chat_history = []
+                st.success(f"Document processing started with ID: {result.get('document_id')}. Check the 'Your Documents' list or refresh to see status updates.")
+                st.rerun()
 
 def render_document_summaries():
     """Render document summaries UI"""
@@ -419,29 +431,37 @@ def render_qa_interface():
         
     st.header("3️⃣ Question Answering")
     
-    # Chat interface
+    doc_id = st.session_state.active_document
+    # Use per-document chat history
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = get_chat_history(doc_id)
+    chat_history = st.session_state.chat_history
     chat_container = st.container()
     
-    # Display chat history
+    # Display chat history with improved style
     with chat_container:
-        for entry in st.session_state.chat_history:
+        for entry in chat_history:
+            timestamp = datetime.fromtimestamp(entry.get("timestamp", time.time())).strftime("%Y-%m-%d %H:%M:%S")
             if entry["role"] == "user":
-                st.markdown(f"""
-                <div class="chat-message user-message">
-                    <div class="avatar">👤</div>
-                    <div class="message">{entry["content"]}</div>
+                st.markdown(f'''
+                <div style="display: flex; align-items: flex-end; margin-bottom: 10px;">
+                    <div style="background: #007BFF; color: white; padding: 12px 18px; border-radius: 18px 18px 4px 18px; max-width: 70%; margin-left: auto;">
+                        <b>You</b> <span style="font-size:0.8em; color:#e0e0e0; float:right;">{timestamp}</span><br>{entry["content"]}
+                    </div>
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=User" width="36" style="margin-left:8px; border-radius:50%;" />
                 </div>
-                """, unsafe_allow_html=True)
+                ''', unsafe_allow_html=True)
             else:
-                st.markdown(f"""
-                <div class="chat-message assistant-message">
-                    <div class="avatar">🤖</div>
-                    <div class="message">{entry["content"]}</div>
+                st.markdown(f'''
+                <div style="display: flex; align-items: flex-end; margin-bottom: 10px;">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" width="36" style="margin-right:8px; border-radius:50%;" />
+                    <div style="background: #1E2A38; color: #A9CCE3; padding: 12px 18px; border-radius: 18px 18px 18px 4px; max-width: 70%;">
+                        <b>Assistant</b> <span style="font-size:0.8em; color:#b0b0b0; float:right;">{timestamp}</span><br>{entry["content"]}
+                    </div>
                 </div>
-                """, unsafe_allow_html=True)
-                
+                ''', unsafe_allow_html=True)
                 # Display sources if available
-                if "sources" in entry:
+                if "sources" in entry and entry["sources"]:
                     with st.expander("View sources", expanded=False):
                         for i, source in enumerate(entry["sources"]):
                             st.markdown(f"**Source {i+1} (Chunk {source['chunk_index']+1}):**")
@@ -451,42 +471,73 @@ def render_qa_interface():
     
     # Input for new question
     st.markdown("---")
-    col1, col2 = st.columns([5, 1])
+    col1, col2, col3 = st.columns([5, 1, 1])
     
     with col1:
+        def on_ask():
+            question = st.session_state.get("question_input", "")
+            if question:
+                chat_history.append({
+                    "role": "user",
+                    "content": question,
+                    "timestamp": time.time()
+                })
+                set_chat_history(doc_id, chat_history)
+                st.session_state.chat_history = chat_history
+                with st.spinner("Generating answer..."):
+                    answer_data = ask_question(question, doc_id)
+                if answer_data:
+                    answer = answer_data.get("answer", "Sorry, I couldn't generate an answer.")
+                    sources = answer_data.get("sources", [])
+                    chat_history.append({
+                        "role": "assistant",
+                        "content": answer,
+                        "sources": sources,
+                        "timestamp": time.time()
+                    })
+                    set_chat_history(doc_id, chat_history)
+                    st.session_state.chat_history = chat_history
+                st.session_state.question_input = ""  # Clear input
+                st.rerun()
+
         question = st.text_input(
             "Ask a question about the document:",
             key="question_input",
-            placeholder="What would you like to know about this document?"
+            placeholder="What would you like to know about this document? (Press Enter to send)",
+            on_change=on_ask
         )
     
     with col2:
-        send_btn = st.button("🔍 Ask", use_container_width=True)
+        send_btn = st.button("🔍", use_container_width=True, help="Send question")
+    
+    with col3:
+        if st.button("🧹 Clear Chat", use_container_width=True, help="Clear chat history for this document"):
+            set_chat_history(doc_id, [])
+            st.session_state.chat_history = []
+            st.rerun()
     
     if send_btn and question:
-        # Add question to chat history
-        st.session_state.chat_history.append({
+        chat_history.append({
             "role": "user",
             "content": question,
             "timestamp": time.time()
         })
-        
-        # Get answer from backend
-        answer_data = ask_question(question, st.session_state.active_document)
-        
+        set_chat_history(doc_id, chat_history)
+        st.session_state.chat_history = chat_history
+        with st.spinner("Generating answer..."):
+            answer_data = ask_question(question, doc_id)
         if answer_data:
             answer = answer_data.get("answer", "Sorry, I couldn't generate an answer.")
             sources = answer_data.get("sources", [])
-            
-            # Add answer to chat history
-            st.session_state.chat_history.append({
+            chat_history.append({
                 "role": "assistant",
                 "content": answer,
                 "sources": sources,
                 "timestamp": time.time()
             })
-        
-        # Clear input and refresh
+            set_chat_history(doc_id, chat_history)
+            st.session_state.chat_history = chat_history
+        st.session_state.question_input = ""
         st.rerun()
 
 # Main application
@@ -518,6 +569,9 @@ def main():
     # Main content
     if "active_document" in st.session_state and st.session_state.active_document:
         # Document is loaded, show analysis and QA
+        doc_id = st.session_state.active_document
+        if "chat_history" not in st.session_state or st.session_state.chat_history != get_chat_history(doc_id):
+            st.session_state.chat_history = get_chat_history(doc_id)
         render_document_summaries()
         render_qa_interface()
     else:

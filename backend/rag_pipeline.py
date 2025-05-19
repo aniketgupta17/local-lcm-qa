@@ -1,4 +1,12 @@
-# rag_pipeline.py - Enhanced RAG Pipeline with reranking and hybrid search
+"""
+rag_pipeline.py - Orchestrates the Retrieval-Augmented Generation (RAG) process for the system.
+
+This class is responsible for:
+- Managing the RAG workflow (retrieval, reranking, answer generation)
+- Using vector store, LLM manager, and prompt templates
+- Supporting hybrid search and reranking
+- Providing both sync and async answer generation
+"""
 import time
 import logging
 import torch
@@ -14,8 +22,8 @@ logger = logging.getLogger(__name__)
 
 class RAGPipeline:
     """
-    Enhanced Retrieval-Augmented Generation (RAG) pipeline with performance optimizations
-    and advanced retrieval features.
+    Orchestrates the Retrieval-Augmented Generation (RAG) process for the system.
+    Handles retrieval, reranking, and answer generation using vector store and LLM manager.
     """
     
     def __init__(
@@ -37,7 +45,7 @@ class RAGPipeline:
             llm_manager: LLM manager for generating answers
             rerank_top_k: Number of documents to retrieve before reranking
             final_top_k: Number of documents to use after reranking
-            use_hybrid_search: Whether to use hybrid search combining semantic and keyword search
+            use_hybrid_search: Whether to use hybrid search
             cache_size: Size of the LRU cache for query results
             executor: Optional ThreadPoolExecutor for parallel processing
             max_workers: Number of workers for the executor if not provided
@@ -62,14 +70,18 @@ class RAGPipeline:
         self.cache_hits = 0
         
         # Prompt templates
-        self.qa_prompt_template = """Answer the question based on the provided context. If the answer is not contained in the context, say "I don't know based on the provided information."
+        self.qa_prompt_template = """
+You are a scientific assistant. Use ONLY the provided context (including both the summary and content of each chunk) to answer the question. 
+If the answer is not in the context, say "Not found in the provided documents."
+Cite the [Document #] in your answer where relevant.
 
 Context:
 {context}
 
 Question: {question}
 
-Answer:"""
+Answer (with citations):
+"""
 
         self.reranking_prompt_template = """Please score the relevance of this passage to the given question on a scale of 1-10, where 10 is perfectly relevant and 1 is completely irrelevant.
 
@@ -144,21 +156,18 @@ Relevance Score (1-10):"""
         return reranked_docs
     
     def _prepare_context(self, documents: List[Dict[str, Any]]) -> Tuple[str, List[Dict[str, Any]]]:
-        """Prepare context from retrieved documents"""
+        """Prepare context from retrieved documents, including both summaries and chunk texts."""
         if not documents:
             return "", []
-        
-        # Combine document texts with markers
         context_parts = []
         sources = []
-        
         for i, doc in enumerate(documents):
-            context_parts.append(f"[Document {i+1}]\n{doc['text']}\n")
+            summary = doc["metadata"].get("summary", "[No summary available]")
+            context_parts.append(f"[Document {i+1}]\nSummary: {summary}\nContent: {doc['text']}\n")
             sources.append({
                 "chunk_index": doc["id"],
                 "score": doc.get("rerank_score", doc.get("score", 0))
             })
-        
         return "\n".join(context_parts), sources
     
     def generate_answer(
@@ -167,7 +176,8 @@ Relevance Score (1-10):"""
         collection_id: str,
         temperature: float = 0.1,
         max_tokens: int = 300,
-        use_reranking: bool = True
+        use_reranking: bool = True,
+        hybrid_alpha: float = None  # Added parameter with default None
     ) -> Dict[str, Any]:
         """
         Generate an answer for a question using the RAG pipeline.
@@ -178,14 +188,20 @@ Relevance Score (1-10):"""
             temperature: LLM temperature parameter
             max_tokens: Maximum number of tokens to generate
             use_reranking: Whether to use reranking for better results
+            hybrid_alpha: Weight balance between semantic (1.0) and keyword search (0.0).
+                         If None, uses the class default value.
             
         Returns:
             Dictionary with answer, sources, and processing time
         """
         start_time = time.time()
         
+        # Use provided hybrid_alpha or fall back to class default
+        if hybrid_alpha is None:
+            hybrid_alpha = self.hybrid_alpha
+        
         # Check cache first
-        cache_key = f"{collection_id}:{question}:{temperature}:{max_tokens}"
+        cache_key = f"{collection_id}:{question}:{temperature}:{max_tokens}:{hybrid_alpha}"
         with self.cache_lock:
             if cache_key in self.query_cache:
                 self.cache_hits += 1
@@ -198,7 +214,7 @@ Relevance Score (1-10):"""
                 collection_id, 
                 question, 
                 self.rerank_top_k if use_reranking else self.final_top_k,
-                self.hybrid_alpha
+                hybrid_alpha
             )
             
             # Step 2: Reranking (if enabled)

@@ -1,4 +1,12 @@
-# llm_manager.py - Optimized LLM inference manager
+"""
+llm_manager.py - Manages all LLM calls for the RAG system.
+
+This class is responsible for:
+- Handling LLM inference (summarization, answering, etc.)
+- Managing model loading and device selection
+- Supporting HuggingFace API, transformers, and llama.cpp
+- Providing async and sync generation methods
+"""
 import os
 import time
 import logging
@@ -10,43 +18,53 @@ import threading
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
+from huggingface_hub import InferenceClient
 
-# Configure logging
 logger = logging.getLogger(__name__)
 
 class LLMManager:
     """
-    Optimized LLM Manager for efficient inference with quantization and resource management
+    Manages all LLM calls for the RAG system (summarization, answering, etc.).
+    Supports HuggingFace API, transformers, and llama.cpp.
     """
-    
     def __init__(
         self,
         model_path: str,
-        model_type: str = "llama.cpp",
+        model_type: str = "huggingface_api",
         device: Optional[torch.device] = None,
         context_size: int = 4096,
         cache_dir: str = "./cache",
         quantization_level: str = "q4_k_m",
         max_workers: int = 2,
-        offload_kv: bool = False,  # KV cache offloading for large context
+        offload_kv: bool = False,
         batch_size: int = 1,
         streaming: bool = False
     ):
         """
         Initialize the LLM Manager.
-        
         Args:
-            model_path: Path to the model file
-            model_type: Type of model (llama.cpp, huggingface)
-            device: PyTorch device (cuda, cpu, mps)
+            model_path: Path or name of the model
+            model_type: Type of model (huggingface_api, huggingface, llama.cpp)
+            device: Torch device
             context_size: Context window size
             cache_dir: Directory for caching model outputs
             quantization_level: Quantization level for model optimization
             max_workers: Maximum number of worker threads
-            offload_kv: Whether to offload KV cache to CPU (for large contexts)
+            offload_kv: Whether to offload KV cache to CPU
             batch_size: Batch size for inference
             streaming: Whether to enable streaming generation
         """
+        self.model_type = model_type
+        self.model_path = model_path
+        if self.model_type == "huggingface_api":
+            logger.info(f"Initializing huggingface_api model from {self.model_path}")
+            self.api_client = InferenceClient(model=self.model_path, token=os.getenv("HF_API_TOKEN"))
+            self.context_size = context_size
+            self.device = device if device else torch.device("cpu")
+            self.cache_dir = Path(cache_dir); self.cache_dir.mkdir(exist_ok=True, parents=True)
+            self.model_lock = threading.RLock()
+            self.executor = ThreadPoolExecutor(max_workers=max_workers)
+            return
         self.model_path = model_path
         self.model_type = model_type
         self.device = device if device else self._get_default_device()
@@ -57,31 +75,24 @@ class LLMManager:
         self.offload_kv = offload_kv
         self.batch_size = batch_size
         self.streaming = streaming
-        
-        # Resource management
         self.executor = ThreadPoolExecutor(max_workers=max_workers)
         self.model_lock = threading.RLock()
-        
-        # Model caching
         self.model = None
         self.tokenizer = None
-        
-        # Initialize the model
         self._initialize_model()
-        
+
     def _get_default_device(self) -> torch.device:
-        """Determine the best available device"""
+        """Determine the best available device."""
         if torch.cuda.is_available():
             return torch.device("cuda")
         elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
             return torch.device("mps")
         else:
             return torch.device("cpu")
-    
+
     def _initialize_model(self) -> None:
-        """Initialize and load the LLM with optimizations"""
+        """Initialize and load the LLM with optimizations."""
         logger.info(f"Initializing {self.model_type} model from {self.model_path}")
-        
         try:
             if self.model_type == "llama.cpp":
                 self._initialize_llamacpp_model()
@@ -89,23 +100,16 @@ class LLMManager:
                 self._initialize_hf_model()
             else:
                 raise ValueError(f"Unsupported model type: {self.model_type}")
-                
             logger.info("Model initialized successfully")
         except Exception as e:
             logger.error(f"Error initializing model: {str(e)}")
             raise
-    
+
     def _initialize_llamacpp_model(self) -> None:
-        """Initialize llama.cpp model with optimizations"""
+        """Initialize llama.cpp model with optimizations."""
         try:
             from llama_cpp import Llama
-            
-            # Set appropriate parameters based on device
-            if str(self.device) == "cuda":
-                n_gpu_layers = -1  # Use all layers on GPU
-            else:
-                n_gpu_layers = 0  # CPU only
-            
+            n_gpu_layers = -1 if str(self.device) == "cuda" else 0
             with self.model_lock:
                 self.model = Llama(
                     model_path=self.model_path,
@@ -113,30 +117,25 @@ class LLMManager:
                     n_batch=self.batch_size,
                     n_gpu_layers=n_gpu_layers,
                     seed=42,
-                    use_mlock=True,  # Memory lock for faster inference
+                    use_mlock=True,
                     verbose=False
                 )
-                
             logger.info(f"Loaded llama.cpp model with context size {self.context_size}")
         except ImportError:
             logger.error("llama_cpp package not installed. Run: pip install llama-cpp-python")
             raise
-    
+
     def _initialize_hf_model(self) -> None:
-        """Initialize HuggingFace model with optimizations"""
+        """Initialize HuggingFace model with optimizations."""
         try:
             import transformers
             from transformers import AutoModelForCausalLM, AutoTokenizer
-            
             with self.model_lock:
-                # Configure model loading
                 load_kwargs = {
                     "device_map": "auto",
-                    "torch_dtype": torch.float16,  # Use half precision
+                    "torch_dtype": torch.float16,
                     "low_cpu_mem_usage": True,
                 }
-                
-                # Add quantization parameters if specified
                 if self.quantization_level:
                     if self.quantization_level == "int8":
                         load_kwargs["load_in_8bit"] = True
@@ -144,207 +143,159 @@ class LLMManager:
                         load_kwargs["load_in_4bit"] = True
                         load_kwargs["bnb_4bit_compute_dtype"] = torch.float16
                         load_kwargs["bnb_4bit_quant_type"] = "nf4"
-                
-                # Load tokenizer
                 self.tokenizer = AutoTokenizer.from_pretrained(
                     self.model_path,
                     use_fast=True
                 )
-                
-                # Load model
                 logger.info("Loading HuggingFace model...")
                 self.model = AutoModelForCausalLM.from_pretrained(
                     self.model_path,
                     **load_kwargs
                 )
-                
-                # Optimize for inference
                 if hasattr(self.model, "eval"):
                     self.model.eval()
-                
                 logger.info(f"Loaded HuggingFace model on {self.device}")
         except ImportError:
             logger.error("transformers package not installed. Run: pip install transformers")
             raise
-    
+
     @lru_cache(maxsize=32)
     def _cached_generate(self, prompt: str, temperature: float, max_tokens: int) -> str:
-        """Generate text with caching"""
-        # Hash the prompt and parameters to create a cache key
+        """Generate text with caching."""
         cache_key = f"{hash(prompt)}_{temperature}_{max_tokens}"
         cache_path = self.cache_dir / f"{cache_key}.txt"
-        
-        # Check cache first
         if cache_path.exists():
             try:
                 with open(cache_path, "r") as f:
                     return f.read()
             except Exception as e:
                 logger.warning(f"Error reading from cache: {e}")
-        
         # Generate new response
-        response = self._generate_raw(prompt, temperature, max_tokens)
-        
-        # Save to cache
-        try:
-            with open(cache_path, "w") as f:
-                f.write(response)
-        except Exception as e:
-            logger.warning(f"Error saving to cache: {e}")
-        
-        return response
-    
+        return self._generate_raw(prompt, temperature, max_tokens)
+
     def _generate_raw(self, prompt: str, temperature: float, max_tokens: int) -> str:
-        """Raw generation without caching"""
-        with self.model_lock:
-            if self.model_type == "llama.cpp":
-                return self._generate_llamacpp(prompt, temperature, max_tokens)
-            elif self.model_type == "huggingface":
-                return self._generate_hf(prompt, temperature, max_tokens)
-            else:
-                raise ValueError(f"Unsupported model type: {self.model_type}")
-    
+        """Generate text using the selected model backend."""
+        if self.model_type == "llama.cpp":
+            return self._generate_llamacpp(prompt, temperature, max_tokens)
+        elif self.model_type == "huggingface":
+            return self._generate_hf(prompt, temperature, max_tokens)
+        elif self.model_type == "huggingface_api":
+            return self._generate_hf_api(prompt, temperature, max_tokens)
+        else:
+            raise ValueError(f"Unsupported model type: {self.model_type}")
+
     def _generate_llamacpp(self, prompt: str, temperature: float, max_tokens: int) -> str:
-        """Generate text using llama.cpp model"""
-        try:
+        """Generate text using llama.cpp backend."""
+        with self.model_lock:
             output = self.model(
                 prompt,
                 max_tokens=max_tokens,
                 temperature=temperature,
-                echo=False,
-                stop=["</s>", "<|im_end|>"]  # Common stop tokens
+                stop=["\n"],
+                echo=False
             )
-            
-            if isinstance(output, dict):
-                return output.get("choices", [{}])[0].get("text", "").strip()
-            elif isinstance(output, list):
-                return output[0].get("text", "").strip()
-            else:
-                return str(output).strip()
-                
-        except Exception as e:
-            logger.error(f"Error generating with llama.cpp: {e}")
-            raise
-    
+            return output["choices"][0]["text"]
+
     def _generate_hf(self, prompt: str, temperature: float, max_tokens: int) -> str:
-        """Generate text using HuggingFace model"""
-        try:
-            # Tokenize input
-            inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
-            
-            # Generate
-            with torch.no_grad():
-                outputs = self.model.generate(
-                    inputs.input_ids,
-                    attention_mask=inputs.attention_mask,
-                    max_new_tokens=max_tokens,
-                    temperature=temperature if temperature > 0 else 1.0,
-                    do_sample=temperature > 0,
-                    pad_token_id=self.tokenizer.eos_token_id,
-                    top_p=0.95,
-                    repetition_penalty=1.1
-                )
-            
-            # Decode
-            result = self.tokenizer.decode(
-                outputs[0][inputs.input_ids.shape[1]:], 
-                skip_special_tokens=True
+        """Generate text using HuggingFace transformers backend."""
+        with self.model_lock:
+            input_ids = self.tokenizer.encode(prompt, return_tensors="pt").to(self.device)
+            output = self.model.generate(
+                input_ids,
+                max_length=max_tokens,
+                temperature=temperature,
+                do_sample=True
             )
-            
-            return result.strip()
-        except Exception as e:
-            logger.error(f"Error generating with HuggingFace: {e}")
-            raise
-    
-    def generate(self, prompt: str, temperature: float = 0.1, max_tokens: int = 300) -> str:
-        """
-        Generate text using the LLM
-        
-        Args:
-            prompt: Input prompt
-            temperature: Temperature parameter for generation
-            max_tokens: Maximum number of tokens to generate
-            
-        Returns:
-            Generated text
-        """
-        start_time = time.time()
-        
+            return self.tokenizer.decode(output[0], skip_special_tokens=True)
+
+    def _generate_hf_api(self, prompt: str, temperature: float, max_tokens: int) -> str:
+        """Generate text using HuggingFace Inference API, using summarization if supported."""
+        summarization_models = ["facebook/bart-large-cnn", "t5-base", "t5-small", "t5-large"]
+        if self.model_path in summarization_models:
+            try:
+                result = self.api_client.summarization(prompt)
+                # Always extract the summary string
+                if isinstance(result, list) and len(result) > 0 and "summary_text" in result[0]:
+                    return result[0]["summary_text"]
+                elif isinstance(result, dict) and "summary_text" in result:
+                    return result["summary_text"]
+                elif isinstance(result, dict) and "generated_text" in result:
+                    return result["generated_text"]
+                else:
+                    logger.error(f"Unexpected summarization result format: {result}")
+                    return str(result)
+            except Exception as e:
+                logger.error(f"Summarization API error: {e}")
+                return f"[Summarization error: {e}]"
+        # Fallback to text_generation for other models
         try:
-            # Use cached generation if possible
-            result = self._cached_generate(prompt, temperature, max_tokens)
-            
-            logger.info(f"Generated {len(result.split())} words in {time.time() - start_time:.2f}s")
+            result = self.api_client.text_generation(prompt, max_new_tokens=max_tokens, temperature=temperature)
             return result
-            
         except Exception as e:
-            logger.error(f"Error in generate: {e}")
-            return f"Error generating text: {str(e)}"
-    
+            logger.error(f"Text generation API error: {e}")
+            return f"[Text generation error: {e}]"
+
+    def generate(self, prompt: str, temperature: float = 0.7, max_tokens: int = 512) -> str:
+        """Public method to generate text (sync). Always use text generation endpoint for answering."""
+        # Always use text generation for answering, even for summarization models
+        if self.model_type == "huggingface_api":
+            try:
+                result = self.api_client.text_generation(prompt, max_new_tokens=max_tokens, temperature=temperature)
+                return result
+            except Exception as e:
+                logger.error(f"Text generation API error: {e}")
+                return f"[Text generation error: {e}]"
+        return self._cached_generate(prompt, temperature, max_tokens)
+
     async def generate_async(self, prompt: str, temperature: float = 0.1, max_tokens: int = 300) -> str:
-        """Async version of generate"""
+        """Async method to generate text."""
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
             self.executor,
             lambda: self.generate(prompt, temperature, max_tokens)
         )
-    
-    def summarize(self, text: str, max_tokens: int = 200) -> str:
-        """
-        Generate a summary of the given text
-        
-        Args:
-            text: Text to summarize
-            max_tokens: Maximum length of summary
-            
-        Returns:
-            Generated summary
-        """
-        if not text:
-            return ""
-        
-        # Truncate text if too long
-        max_chars = self.context_size * 2  # Rough approximation
-        if len(text) > max_chars:
-            text = text[:max_chars] + "..."
-        
-        prompt = f"""Please provide a concise summary of the following text:
 
-{text}
-
-Summary:"""
-        
-        return self.generate(prompt, temperature=0.1, max_tokens=max_tokens)
-    
-    def generate_combined_summary(self, texts: List[str], max_tokens: int = 300) -> str:
-        """
-        Generate a combined summary from multiple text fragments
-        
-        Args:
-            texts: List of text fragments to summarize
-            max_tokens: Maximum length of the combined summary
-            
-        Returns:
-            Combined summary
-        """
-        if not texts:
-            return ""
-        
-        # Join texts with separators
-        combined = "\n\n---\n\n".join(
-            # Truncate each text if too long
-            [t[:2000] + "..." if len(t) > 2000 else t for t in texts]
+    def summarize(self, text: str, max_tokens: int = 250) -> str:
+        """Summarize a given text using the LLM. Handles empty, too-short, or too-long input gracefully."""
+        # Token/length validation
+        try:
+            import tiktoken
+            encoding = tiktoken.get_encoding("cl100k_base")
+            num_tokens = len(encoding.encode(text))
+        except ImportError:
+            num_tokens = len(text.split())
+        if not text or len(text.strip()) < 20 or num_tokens < 20:
+            logger.warning("Skipping summarization: input text too short or empty.")
+            return "[No summary: text too short or empty]"
+        if num_tokens > 1024 or len(text) > 4000:
+            logger.info("Truncating long chunk for summarization.")
+            text = text[:4000]
+            try:
+                import tiktoken
+                encoding = tiktoken.get_encoding("cl100k_base")
+                tokens = encoding.encode(text)
+                text = encoding.decode(tokens[:1024])
+            except ImportError:
+                text = ' '.join(text.split()[:1024])
+        if self.model_type == "huggingface_api":
+            summary = self._generate_hf_api(text, temperature=0.1, max_tokens=max_tokens)
+            if summary and "error" not in summary.lower():
+                return summary
+            else:
+                logger.error(f"Summarization failed or returned error: {summary}")
+                return "[Summary unavailable due to API error]"
+        prompt = (
+            "Please provide a clear, concise summary of the following document section, "
+            "focusing on the main ideas and key details. Write in complete sentences.\n\n"
+            f"Section:\n{text}\n\nSummary:"
         )
-        
-        # Further truncate if still too long
-        max_chars = self.context_size * 2  # Rough approximation
-        if len(combined) > max_chars:
-            combined = combined[:max_chars] + "..."
-        
-        prompt = f"""Please provide a concise summary that integrates information from these text fragments:
+        try:
+            return self.generate(prompt, max_tokens=max_tokens)
+        except Exception as e:
+            logger.error(f"Summarization error: {e}")
+            return "[Summary unavailable due to error]"
 
-{combined}
-
-Combined summary:"""
-        
-        return self.generate(prompt, temperature=0.1, max_tokens=max_tokens)
+    def generate_combined_summary(self, texts: List[str], max_tokens: int = 300) -> str:
+        """Generate a combined summary for a list of texts."""
+        combined = "\n".join(texts)
+        return self.summarize(combined, max_tokens=max_tokens)

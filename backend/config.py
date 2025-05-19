@@ -1,40 +1,42 @@
-# config.py - Configuration settings for RAG system
+"""
+config.py - Centralized configuration for the RAG system
+
+This file manages all configuration settings for the backend, allowing dynamic changes to models, storage, and runtime options via environment variables or direct edits.
+"""
 import os
 import torch
 from pathlib import Path
 
-# Base directories
+# --- Base Directories ---
 BASE_DIR = Path(os.path.dirname(os.path.abspath(__file__)))
 
-# Get directory paths, ensuring they are Path objects
-# Use Path() to convert environment variable strings to Path objects
-MODELS_DIR = Path(os.environ.get("MODEL_PATH", BASE_DIR / "models"))
-VECTOR_DB_PATH = Path(os.environ.get("VECTOR_DB_PATH", BASE_DIR / "vector_db"))
-CACHE_DIR = Path(os.environ.get("CACHE_DIR", BASE_DIR / "cache"))
-UPLOAD_FOLDER = Path(os.environ.get("UPLOAD_FOLDER", BASE_DIR / "uploads"))
-LOG_DIR = Path(os.environ.get("LOG_DIR", BASE_DIR / "logs")) # Also include LOG_DIR from env if set
+# Helper to get env var as Path
+get_path = lambda var, default: Path(os.environ.get(var, str(default)))
 
-# Create directories if they don't exist
+# --- Directory Paths ---
+MODELS_DIR = get_path("MODEL_PATH", BASE_DIR / "models")
+VECTOR_DB_PATH = get_path("VECTOR_DB_PATH", BASE_DIR / "vector_db")
+CACHE_DIR = get_path("CACHE_DIR", BASE_DIR / "cache")
+UPLOAD_FOLDER = get_path("UPLOAD_FOLDER", BASE_DIR / "uploads")
+LOG_DIR = get_path("LOG_DIR", BASE_DIR / "logs")
+
+# Ensure all directories exist
 for directory in [MODELS_DIR, VECTOR_DB_PATH, CACHE_DIR, UPLOAD_FOLDER, LOG_DIR]:
-    # Ensure each item in the list is treated as a Path object
-    Path(directory).mkdir(exist_ok=True, parents=True)
+    directory.mkdir(exist_ok=True, parents=True)
 
-
-# Model settings
-# Using a relative path as default is generally better if the model is in the project structure
-DEFAULT_MODEL = os.environ.get("LLM_MODEL", "Meta-Llama-3-8B-Instruct.Q4_K_M.gguf")
+# --- Model Settings ---
+DEFAULT_MODEL = os.environ.get("DEFAULT_MODEL", "mistralai/Mistral-7B-Instruct-v0.3")
 EMBEDDINGS_MODEL = os.environ.get("EMBEDDINGS_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
-DEVICE = os.environ.get("DEVICE", "auto")
+DEVICE = os.environ.get("DEVICE", "cpu")  # Can be 'cpu', 'cuda', 'mps', or 'auto'
 BATCH_SIZE = int(os.environ.get("BATCH_SIZE", 32))
 USE_FAISS = os.environ.get("USE_FAISS", "True").lower() == "true"
-# MAX_WORKERS defined below under RAG settings - Removed duplicate definition here
 
-# API settings
+# --- API Settings ---
 API_HOST = os.environ.get("API_HOST", "0.0.0.0")
 API_PORT = int(os.environ.get("API_PORT", 8001))
 DEBUG_MODE = os.environ.get("DEBUG_MODE", "False").lower() == "true"
 
-# RAG settings
+# --- RAG/Document Processing Settings ---
 CONTEXT_SIZE = int(os.environ.get("CONTEXT_SIZE", 4096))
 CHUNK_SIZE = int(os.environ.get("CHUNK_SIZE", 1200))
 CHUNK_OVERLAP = int(os.environ.get("CHUNK_OVERLAP", 200))
@@ -42,27 +44,30 @@ RERANK_TOP_K = int(os.environ.get("RERANK_TOP_K", 10))
 FINAL_TOP_K = int(os.environ.get("FINAL_TOP_K", 3))
 HYBRID_ALPHA = float(os.environ.get("HYBRID_ALPHA", 0.7))
 USE_HYBRID_SEARCH = os.environ.get("USE_HYBRID_SEARCH", "True").lower() == "true"
-MAX_WORKERS = int(os.environ.get("MAX_WORKERS", 4)) # Keep this definition
+MAX_WORKERS = int(os.environ.get("MAX_WORKERS", 4))
+DIM_REDUCTION = int(os.environ.get("DIM_REDUCTION", 128))
 
+# --- Device Selection Logic ---
+def get_device(device_str):
+    if device_str == "auto":
+        if torch.cuda.is_available():
+            return torch.device("cuda")
+        elif getattr(torch.backends, "mps", None) and torch.backends.mps.is_available():
+            return torch.device("mps")
+        else:
+            return torch.device("cpu")
+    return torch.device(device_str)
 
-# Determine the device to use
-# This block is also in app.py; ensure consistency or use one source
-# If both have it, app.py's determination will overwrite config's at runtime
-# Keeping it here for completeness based on your original config, but be mindful
-# of where the final device is determined when app.py runs.
-if DEVICE == "auto":
-    if torch.cuda.is_available():
-        DEVICE = torch.device("cuda")
-    elif getattr(torch.backends, "mps", None) and torch.backends.mps.is_available():
-        DEVICE = torch.device("mps")
-    else:
-        DEVICE = torch.device("cpu")
-else:
-    DEVICE = torch.device(DEVICE)
+DEVICE = get_device(DEVICE)
 
-# Logging settings
+# --- Logging Settings ---
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
-# Ensure LOG_FILE is also treated as a Path object if it comes from environment variable
-LOG_FILE = os.environ.get("LOG_FILE", str(LOG_DIR / "rag_system.log"))
-# The logging setup in utils.py expects a string for log_file, so we keep it as string here
-# If utils.setup_logging needs a Path object, convert it there.
+LOG_FILE = str(os.environ.get("LOG_FILE", LOG_DIR / "rag_system.log"))
+
+# --- Docstring for quick reference ---
+"""
+Key config variables:
+- Change DEFAULT_MODEL, EMBEDDINGS_MODEL, DEVICE, etc. to switch LLMs or embedding models.
+- All paths and settings can be overridden by environment variables.
+- Use DEVICE='auto' for automatic device selection.
+"""
