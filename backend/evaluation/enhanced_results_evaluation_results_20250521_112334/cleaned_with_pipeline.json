@@ -1,0 +1,88 @@
+{
+  "summary": {
+    "total_queries": 5,
+    "domains_covered": 5,
+    "mean_latency": 2.2266567707061764,
+    "p90_latency": 2.6071017932891847,
+    "overall_metrics": {
+      "hallucination_reduction": 0.8215520455895456,
+      "source_grounding": 0.060360855360855364,
+      "confidence_calibration": 1.0,
+      "exact_match": 0.0,
+      "precision@5": 0.0,
+      "trace_score": 0.07384375
+    }
+  },
+  "metrics": {
+    "exact_match": {
+      "hotpotqa": 0.0,
+      "pubmedqa": 0.0,
+      "cuad": 0.0,
+      "finqa": 0.0,
+      "techqa": 0.0,
+      "overall": 0.0
+    },
+    "precision@k": {
+      "hotpotqa": 0.0,
+      "pubmedqa": 0.0,
+      "cuad": 0.0,
+      "finqa": 0.0,
+      "techqa": 0.0,
+      "overall": 0.0
+    },
+    "recall@k": {
+      "hotpotqa": 0.0,
+      "pubmedqa": 0.0,
+      "cuad": 0.0,
+      "finqa": 0.0,
+      "techqa": 0.0,
+      "overall": 0.0
+    },
+    "trace_scores": {
+      "hotpotqa": 0.0,
+      "pubmedqa": 0.0,
+      "cuad": 0.0,
+      "finqa": 0.36921875,
+      "techqa": 0.0,
+      "overall": 0.07384375
+    },
+    "hallucination_scores": {
+      "hotpotqa": 1.0,
+      "pubmedqa": 1.0,
+      "cuad": 0.55,
+      "finqa": 0.25776022794772796,
+      "techqa": 1.0,
+      "overall": 0.8215520455895456
+    },
+    "confidence_calibration": {
+      "hotpotqa": 1.0,
+      "pubmedqa": 1.0,
+      "cuad": 1.0,
+      "finqa": 0.8232151442307692,
+      "techqa": 1.0,
+      "overall": 1.0
+    },
+    "source_overlap": {
+      "hotpotqa": 0.0,
+      "pubmedqa": 0.0,
+      "cuad": 0.0,
+      "finqa": 0.3018042768042768,
+      "techqa": 0.0,
+      "overall": 0.060360855360855364
+    },
+    "latency": {
+      "mean": 2.2266567707061764,
+      "median": 2.0690627098083496,
+      "min": 1.9130621433258055,
+      "max": 2.706479501724243,
+      "p90": 2.6071017932891847,
+      "p99": 2.696541730880737
+    },
+    "aggregate_scores": {
+      "mean_hallucination_reduction": 0.8962385951885952,
+      "mean_source_grounding": 0.04828868428868429,
+      "mean_confidence_calibration": 1.0046430288461539,
+      "p90_latency": 9.709971086530976
+    }
+  }
+}

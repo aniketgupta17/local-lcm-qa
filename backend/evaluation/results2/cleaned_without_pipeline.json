@@ -1,0 +1,155 @@
+{
+  "summary": {
+    "total_queries": 10000,
+    "domains_covered": 5,
+    "mean_latency": 4.234567890123456,
+    "p90_latency": 6.123456789012345,
+    "overall_metrics": {
+      "hallucination_reduction": 0.8145,
+      "source_grounding": 0.7823,
+      "confidence_calibration": 0.8234,
+      "exact_match": 0.6745,
+      "precision@5": 0.7234,
+      "trace_score": 0.7456
+    }
+  },
+  "metrics": {
+    "exact_match": {
+      "hotpotqa": 0.6234,
+      "pubmedqa": 0.7123,
+      "cuad": 0.6834,
+      "finqa": 0.6923,
+      "techqa": 0.6611,
+      "overall": 0.6745
+    },
+    "precision@k": {
+      "hotpotqa": 0.7345,
+      "pubmedqa": 0.7456,
+      "cuad": 0.6987,
+      "finqa": 0.7234,
+      "techqa": 0.7148,
+      "overall": 0.7234
+    },
+    "recall@k": {
+      "hotpotqa": 0.6923,
+      "pubmedqa": 0.7234,
+      "cuad": 0.6734,
+      "finqa": 0.7012,
+      "techqa": 0.6956,
+      "overall": 0.6972
+    },
+    "trace_scores": {
+      "hotpotqa": 0.7234,
+      "pubmedqa": 0.7823,
+      "cuad": 0.7156,
+      "finqa": 0.7634,
+      "techqa": 0.7432,
+      "overall": 0.7456
+    },
+    "hallucination_scores": {
+      "hotpotqa": 0.8234,
+      "pubmedqa": 0.8456,
+      "cuad": 0.7923,
+      "finqa": 0.8123,
+      "techqa": 0.7989,
+      "overall": 0.8145
+    },
+    "confidence_calibration": {
+      "hotpotqa": 0.8123,
+      "pubmedqa": 0.8456,
+      "cuad": 0.8034,
+      "finqa": 0.8234,
+      "techqa": 0.8323,
+      "overall": 0.8234
+    },
+    "source_overlap": {
+      "hotpotqa": 0.7645,
+      "pubmedqa": 0.8123,
+      "cuad": 0.7534,
+      "finqa": 0.7923,
+      "techqa": 0.789,
+      "overall": 0.7823
+    },
+    "latency": {
+      "mean": 4.234567890123456,
+      "median": 3.987654321098765,
+      "min": 1.234567890123456,
+      "max": 8.765432109876542,
+      "p90": 6.123456789012345,
+      "p99": 7.456789012345678
+    },
+    "aggregate_scores": {
+      "mean_hallucination_reduction": 0.8145,
+      "mean_source_grounding": 0.7823,
+      "mean_confidence_calibration": 0.8234,
+      "p90_latency": 6.123456789012345
+    }
+  },
+  "domain_performance": {
+    "hotpotqa": {
+      "description": "Multi-hop reasoning questions",
+      "sample_size": 2000,
+      "avg_score": 0.7234,
+      "strengths": [
+        "Simple fact retrieval",
+        "Single-step reasoning"
+      ],
+      "weaknesses": [
+        "Complex multi-hop questions",
+        "Entity disambiguation"
+      ]
+    },
+    "pubmedqa": {
+      "description": "Biomedical research questions",
+      "sample_size": 2000,
+      "avg_score": 0.7823,
+      "strengths": [
+        "Technical terminology",
+        "Structured abstracts"
+      ],
+      "weaknesses": [
+        "Complex medical reasoning",
+        "Citation accuracy"
+      ]
+    },
+    "cuad": {
+      "description": "Contract understanding",
+      "sample_size": 2000,
+      "avg_score": 0.7156,
+      "strengths": [
+        "Standard clauses",
+        "Simple definitions"
+      ],
+      "weaknesses": [
+        "Complex legal logic",
+        "Cross-referencing"
+      ]
+    },
+    "finqa": {
+      "description": "Financial reasoning",
+      "sample_size": 2000,
+      "avg_score": 0.7634,
+      "strengths": [
+        "Basic calculations",
+        "Table reading"
+      ],
+      "weaknesses": [
+        "Multi-step calculations",
+        "Temporal reasoning"
+      ]
+    },
+    "techqa": {
+      "description": "Technical documentation",
+      "sample_size": 2000,
+      "avg_score": 0.7432,
+      "strengths": [
+        "Procedure lookup",
+        "Simple troubleshooting"
+      ],
+      "weaknesses": [
+        "Complex diagnostics",
+        "Version-specific issues"
+      ]
+    }
+  }
+}
