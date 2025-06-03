@@ -57,7 +57,7 @@ backend/
 3. **Start the backend:**
    ```bash
    python app.py
-   # By default runs on http://localhost:8001
+   # By default runs on http://localhost:8000
    ```
 
 ---
