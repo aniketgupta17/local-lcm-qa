@@ -176,7 +176,7 @@ def render_header():
     col1, col2, col3 = st.columns([6, 3, 1])
     
     with col1:
-        st.title("📚 Advanced Document Q&A System")
+        st.title(" Scientific Document Q&A System")
         st.write(
             "Upload documents or paste text for AI-powered summarization and question answering, "
             "all running locally on your machine."
