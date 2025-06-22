@@ -84,14 +84,6 @@ curl -X POST http://localhost:8001/api/answer \
   -d '{"question": "What is the summary?", "document_id": "<doc_id>"}'
 ```
 
----
-
-## 🧩 Main Components
-- **Flask API:** Handles all HTTP requests
-- **DocumentProcessor:** Loads, chunks, and caches documents
-- **VectorStore:** Stores and retrieves embeddings (ChromaDB)
-- **RAGPipeline:** Retrieval, reranking, and answer generation
-- **LLMManager:** Manages LLM inference (summarization, Q&A)
 
 ---
 
@@ -99,9 +91,13 @@ curl -X POST http://localhost:8001/api/answer \
 - Check `logs/` for error logs
 - Ensure all dependencies are installed (see `requirements.txt`)
 - For GPU, set `DEVICE=cuda` and ensure CUDA drivers are installed
-- For HuggingFace API, set `HF_API_TOKEN` in your environment
+- For HuggingFace API, set `HF_API_TOKEN` in your ---
 
----
+## 🧩 Main Components
+- **DocumentProcessor:** Loads, chunks, and caches documents
+- **VectorStore:** Stores and retrieves embeddings (ChromaDB)
+- **RAGPipeline:** Retrieval, reranking, and answer generation
+- **LLMManager:** Manages LLM inference (summarization, Q&A)
 
 ## 📚 References
 - [Flask](https://flask.palletsprojects.com/)
